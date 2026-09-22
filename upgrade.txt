@@ -1,0 +1,2 @@
+1. We can add more image format using stb lib.
+2. We can make the image rendering in real time instead of printing an image.

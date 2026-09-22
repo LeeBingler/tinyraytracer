@@ -1,9 +1,30 @@
 #include "geometry.h"
 #include <cmath>
+#include <cstdlib>
 #include <fstream>
 #include <iostream>
 #include <limits>
 #include <vector>
+
+struct Sphere {
+  Vec3f position;
+  float radius;
+
+  Sphere(const Vec3f &p, const float &r) : position(p), radius(r) {}
+
+  // Ray intersect doc:
+  // https://www.lighthouse3d.com/tutorials/maths/ray-sphere-intersection/
+  bool ray_intersect(Vec3f &origin, Vec3f &direction) {
+    Vec3f hypo = origin - position;
+    float projP = hypo * direction;
+    float perp_square = hypo * hypo - projP * projP;
+
+    if (perp_square > radius * radius)
+      return false;
+
+    return true;
+  }
+};
 
 void render() {
   const int width = 1024;
