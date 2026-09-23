@@ -8,18 +8,27 @@
 
 struct Sphere {
   Vec3f position;
-  float radius;
+  double radius;
 
-  Sphere(const Vec3f &p, const float &r) : position(p), radius(r) {}
+  Sphere(const Vec3f &p, const double &r) : position(p), radius(r) {}
 
   // Ray intersect doc:
   // https://www.lighthouse3d.com/tutorials/maths/ray-sphere-intersection/
   bool ray_intersect(Vec3f &origin, Vec3f &direction) {
     Vec3f hypo = origin - position;
-    float projP = hypo * direction;
-    float perp_square = hypo * hypo - projP * projP;
+    double projP = hypo * direction;
+    double perp_square = hypo * hypo - projP * projP;
 
     if (perp_square > radius * radius)
+      return false;
+
+    double thc = sqrtf(radius * radius - perp_square);
+    double t0 = projP - thc;
+    double t1 = projP + thc;
+
+    if (t0 < 0)
+      t0 = t1;
+    if (t0 < 0)
       return false;
 
     return true;
