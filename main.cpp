@@ -19,6 +19,7 @@ struct Sphere {
     double projP = hypo * direction;
     double perp_square = hypo * hypo - projP * projP;
 
+    // Check if ray intersect with the circle
     if (perp_square > radius * radius)
       return false;
 
@@ -26,6 +27,7 @@ struct Sphere {
     double t0 = projP - thc;
     double t1 = projP + thc;
 
+    // check if the sphere is behind ray (x-axis in 2D)
     if (t0 < 0)
       t0 = t1;
     if (t0 < 0)
