@@ -50,14 +50,23 @@ public:
   }
 };
 
+class Light {
+public:
+  Vec3f position;
+  double intensity;
+  Light(const Vec3f &p, const double &i) : position(p), intensity(i) {};
+};
+
 bool spheres_intersect(Vec3f ori, Vec3f dir, std::vector<Sphere> &spheres,
-                       Material &material) {
+                       Material &material, Vec3f &normal, Vec3f &hit) {
   double spheres_dist = std::numeric_limits<float>::max();
 
   for (auto sphere : spheres) {
     double dist_i;
     if (sphere.ray_intersect(ori, dir, dist_i) && dist_i < spheres_dist) {
       spheres_dist = dist_i;
+      hit = ori + dir * dist_i;
+      normal = (hit - sphere.position).normalize();
       material = sphere.material;
     }
   }
@@ -65,16 +74,22 @@ bool spheres_intersect(Vec3f ori, Vec3f dir, std::vector<Sphere> &spheres,
   return spheres_dist < 1000;
 }
 
-Vec3f cast_ray(Vec3f ori, Vec3f dir, std::vector<Sphere> &spheres) {
+Vec3f cast_ray(Vec3f ori, Vec3f dir, std::vector<Sphere> &spheres,
+               std::vector<Light> lights) {
   Material material;
+  Vec3f normal;
+  Vec3f hit;
 
-  if (spheres_intersect(ori, dir, spheres, material))
+  if (spheres_intersect(ori, dir, spheres, material, normal, hit)) {
     return material.diffuse_color; // Sphere color
+  }
 
   return Vec3f(0.7, 0.7, 0.7); // Background color
 }
 
-void render(std::vector<Vec3f> &framebuffer, std::vector<Sphere> &spheres) {
+void render(std::vector<Vec3f> &framebuffer, std::vector<Sphere> &spheres,
+            std::vector<Light> lights) {
+
   for (size_t j = 0; j < height; j++) {
     for (size_t i = 0; i < width; i++) {
       float x = (2. * (i + 0.5) / (float)width - 1.) * tan(fov / 2.) * width /
@@ -82,7 +97,8 @@ void render(std::vector<Vec3f> &framebuffer, std::vector<Sphere> &spheres) {
       float y = -(2. * (j + 0.5) / (float)height - 1.) * tan(fov / 2.);
       Vec3f dir = Vec3f(x, y, -1.).normalize();
 
-      framebuffer[i + j * width] = cast_ray(Vec3f(0, 0, 0), dir, spheres);
+      framebuffer[i + j * width] =
+          cast_ray(Vec3f(0, 0, 0), dir, spheres, lights);
     }
   }
 }
@@ -106,13 +122,16 @@ int main() {
   Material red{Vec3f(1.0, .0, .0)};
   Material blue{Vec3f(.0, .0, 1.0)};
 
+  std::vector<Light> lights;
+  lights.push_back(Light(Vec3f(-20, 20, 20), 1.5));
+
   std::vector<Sphere> spheres;
   spheres.push_back(Sphere(Vec3f(-3, 0, -16), 2, red));
   spheres.push_back(Sphere(Vec3f(-1.0, -1.5, -12), 2, red));
   spheres.push_back(Sphere(Vec3f(1.5, -0.5, -18), 3, blue));
   spheres.push_back(Sphere(Vec3f(7, 5, -18), 4, red));
 
-  render(framebuffer, spheres);
+  render(framebuffer, spheres, lights);
 
   save_image(framebuffer);
   return 0;
