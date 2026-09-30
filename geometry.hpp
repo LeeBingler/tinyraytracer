@@ -1,4 +1,7 @@
 #pragma once
+
+#pragma GCC diagnostic ignored "-Wtemplate-id-cdtor"
+
 #include <cassert>
 #include <cmath>
 #include <iostream>
@@ -75,23 +78,20 @@ template <typename T> struct vec<4, T> {
   T x, y, z, w;
 };
 
-template <size_t DIM, typename T>
-T operator*(const vec<DIM, T> &lhs, const vec<DIM, T> &rhs) {
+template <size_t DIM, typename T> T operator*(const vec<DIM, T> &lhs, const vec<DIM, T> &rhs) {
   T ret = T();
   for (size_t i = DIM; i--; ret += lhs[i] * rhs[i])
     ;
   return ret;
 }
 
-template <size_t DIM, typename T>
-vec<DIM, T> operator+(vec<DIM, T> lhs, const vec<DIM, T> &rhs) {
+template <size_t DIM, typename T> vec<DIM, T> operator+(vec<DIM, T> lhs, const vec<DIM, T> &rhs) {
   for (size_t i = DIM; i--; lhs[i] += rhs[i])
     ;
   return lhs;
 }
 
-template <size_t DIM, typename T>
-vec<DIM, T> operator-(vec<DIM, T> lhs, const vec<DIM, T> &rhs) {
+template <size_t DIM, typename T> vec<DIM, T> operator-(vec<DIM, T> lhs, const vec<DIM, T> &rhs) {
   for (size_t i = DIM; i--; lhs[i] -= rhs[i])
     ;
   return lhs;
@@ -105,14 +105,12 @@ vec<DIM, T> operator*(const vec<DIM, T> &lhs, const U &rhs) {
   return ret;
 }
 
-template <size_t DIM, typename T>
-vec<DIM, T> operator-(const vec<DIM, T> &lhs) {
+template <size_t DIM, typename T> vec<DIM, T> operator-(const vec<DIM, T> &lhs) {
   return lhs * T(-1);
 }
 
 template <typename T> vec<3, T> cross(vec<3, T> v1, vec<3, T> v2) {
-  return vec<3, T>(v1.y * v2.z - v1.z * v2.y, v1.z * v2.x - v1.x * v2.z,
-                   v1.x * v2.y - v1.y * v2.x);
+  return vec<3, T>(v1.y * v2.z - v1.z * v2.y, v1.z * v2.x - v1.x * v2.z, v1.x * v2.y - v1.y * v2.x);
 }
 
 template <size_t DIM, typename T>
