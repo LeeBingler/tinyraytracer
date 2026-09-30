@@ -1,4 +1,5 @@
 #include "geometry.hpp"
+#include "material.hpp"
 #include <cmath>
 #include <cstdlib>
 #include <fstream>
@@ -10,19 +11,13 @@ constexpr int width = 1024;
 constexpr int height = 768;
 constexpr double fov = M_PI / 2.;
 
-class Material {
-public:
-  Material(const Vec3f &color) : diffuse_color(color) {}
-  Material() : diffuse_color() {}
-  Vec3f diffuse_color;
-};
-
 class Sphere {
 public:
   Vec3f position;
   double radius;
-  Material material;
-  Sphere(const Vec3f &p, const double &r, const Material &m)
+  PhongMaterial material;
+
+  Sphere(const Vec3f &p, const double &r, const PhongMaterial &m)
       : position(p), radius(r), material(m) {}
 
   // Ray intersect doc:
@@ -57,8 +52,8 @@ public:
   Light(const Vec3f &p, const double &i) : position(p), intensity(i) {};
 };
 
-bool spheres_intersect(Vec3f ori, Vec3f dir, std::vector<Sphere> &spheres,
-                       Material &material, Vec3f &normal, Vec3f &hit) {
+bool spheres_intersect(Vec3f ori, Vec3f dir, std::vector<Sphere> &spheres, PhongMaterial &material,
+                       Vec3f &normal, Vec3f &hit) {
   double spheres_dist = std::numeric_limits<double>::max();
 
   for (auto sphere : spheres) {
@@ -74,21 +69,23 @@ bool spheres_intersect(Vec3f ori, Vec3f dir, std::vector<Sphere> &spheres,
   return spheres_dist < 1000;
 }
 
-Vec3f cast_ray(Vec3f ori, Vec3f dir, std::vector<Sphere> &spheres,
-               std::vector<Light> lights) {
-  Material material;
-  Vec3f normal;
-  Vec3f hit;
+Vec3f cast_ray(Vec3f ori, Vec3f dir, std::vector<Sphere> &spheres, std::vector<Light> lights) {
+  PhongMaterial material;
+  Vec3f normal, hit;
 
   if (spheres_intersect(ori, dir, spheres, material, normal, hit)) {
-    double lights_intensity = .0;
+    double diffuse_light = .0;
+    double specular_light = .0;
 
     for (auto light : lights) {
       Vec3f light_dir = (light.position - hit).normalize();
-      lights_intensity += light.intensity * std::max(0.f, light_dir * normal);
+      // Vec3f reflection_light = normal * (normal *)diffuse_light;
+
+      diffuse_light += light.intensity * std::max(0.f, light_dir * normal);
+      specular_light += light.intensity * std::max(0.f, light_dir * normal);
     }
 
-    return material.diffuse_color * lights_intensity; // Sphere color
+    return material.diffuse_color * (diffuse_light + specular_light); // Sphere color
   }
 
   return Vec3f(0.7, 0.7, 0.7); // Background color
@@ -99,13 +96,11 @@ void render(std::vector<Vec3f> &framebuffer, std::vector<Sphere> &spheres,
 
   for (size_t j = 0; j < height; j++) {
     for (size_t i = 0; i < width; i++) {
-      float x = (2. * (i + 0.5) / (float)width - 1.) * tan(fov / 2.) * width /
-                (float)height;
+      float x = (2. * (i + 0.5) / (float)width - 1.) * tan(fov / 2.) * width / (float)height;
       float y = -(2. * (j + 0.5) / (float)height - 1.) * tan(fov / 2.);
       Vec3f dir = Vec3f(x, y, -1.).normalize();
 
-      framebuffer[i + j * width] =
-          cast_ray(Vec3f(0, 0, 0), dir, spheres, lights);
+      framebuffer[i + j * width] = cast_ray(Vec3f(0, 0, 0), dir, spheres, lights);
     }
   }
 }
@@ -126,8 +121,8 @@ void save_image(std::vector<Vec3f> &framebuffer) {
 int main() {
   std::vector<Vec3f> framebuffer(width * height);
 
-  Material red{Vec3f(1.0, .0, .0)};
-  Material blue{Vec3f(.0, .0, 1.0)};
+  PhongMaterial red{Vec3f(1.0, .0, .0), 0.3, 50.};
+  PhongMaterial blue{Vec3f(.0, .0, 1.0), 0.9, 10.};
 
   std::vector<Light> lights;
   lights.push_back(Light(Vec3f(-20, 20, 20), 1.5));
