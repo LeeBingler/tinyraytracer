@@ -59,7 +59,7 @@ public:
 
 bool spheres_intersect(Vec3f ori, Vec3f dir, std::vector<Sphere> &spheres,
                        Material &material, Vec3f &normal, Vec3f &hit) {
-  double spheres_dist = std::numeric_limits<float>::max();
+  double spheres_dist = std::numeric_limits<double>::max();
 
   for (auto sphere : spheres) {
     double dist_i;
@@ -81,7 +81,14 @@ Vec3f cast_ray(Vec3f ori, Vec3f dir, std::vector<Sphere> &spheres,
   Vec3f hit;
 
   if (spheres_intersect(ori, dir, spheres, material, normal, hit)) {
-    return material.diffuse_color; // Sphere color
+    double lights_intensity = .0;
+
+    for (auto light : lights) {
+      Vec3f light_dir = (light.position - hit).normalize();
+      lights_intensity += light.intensity * std::max(0.f, light_dir * normal);
+    }
+
+    return material.diffuse_color * lights_intensity; // Sphere color
   }
 
   return Vec3f(0.7, 0.7, 0.7); // Background color
