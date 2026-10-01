@@ -14,7 +14,7 @@ constexpr double fov = M_PI / 2.;
 Vec3f whiteColor(1., 1., 1.);
 Vec3f blueColor(.0, .0, 1.);
 Vec3f redColor(1., 0., 0.);
-Vec3f BgColor(0.9, 0.9, 0.9);
+Vec3f BgColor(0.2, 0.2, 0.2);
 
 class Sphere {
 public:
@@ -84,6 +84,7 @@ Vec3f cast_ray(Vec3f ori, Vec3f dir, std::vector<Sphere> &spheres, std::vector<L
     double diffuse_light = .0;
     double specular_light = .0;
 
+    // Take everything here to a PhongMaterial method that return only the final pixel color
     for (auto light : lights) {
       Vec3f light_dir = (light.position - hit).normalize();
       Vec3f reflection_light = reflect(-light_dir, normal);
@@ -93,7 +94,9 @@ Vec3f cast_ray(Vec3f ori, Vec3f dir, std::vector<Sphere> &spheres, std::vector<L
                                                     material.specular_exponent);
     }
 
-    return material.diffuse_color * diffuse_light + whiteColor * specular_light; // Sphere color
+    // Sphere color at dir
+    return material.diffuse_color * diffuse_light * material.albedo[0] +
+           whiteColor * specular_light * material.albedo[1];
   }
 
   return BgColor;
@@ -101,7 +104,7 @@ Vec3f cast_ray(Vec3f ori, Vec3f dir, std::vector<Sphere> &spheres, std::vector<L
 
 void render(std::vector<Vec3f> &framebuffer, std::vector<Sphere> &spheres,
             std::vector<Light> lights) {
-
+#pragma omp parallel for
   for (size_t j = 0; j < height; j++) {
     for (size_t i = 0; i < width; i++) {
       float x = (2. * (i + 0.5) / (float)width - 1.) * tan(fov / 2.) * width / (float)height;
@@ -129,17 +132,17 @@ void save_image(std::vector<Vec3f> &framebuffer) {
 int main() {
   std::vector<Vec3f> framebuffer(width * height);
 
-  PhongMaterial red{redColor, 0.3, 50.};
-  PhongMaterial blue{blueColor, 0.9, 10.};
+  PhongMaterial red{redColor, {.6, 0.3}, 50.};
+  PhongMaterial blue{blueColor, {.9, .1}, 10.};
 
   std::vector<Light> lights;
   lights.push_back(Light(Vec3f(-20, 20, 20), 1.5));
-  lights.push_back(Light(Vec3f(20, 20, 20), 1.5));
-  lights.push_back(Light(Vec3f(0, 20, 20), 1.5));
+  lights.push_back(Light(Vec3f(30, 50, -25), 1.8));
+  lights.push_back(Light(Vec3f(30, 20, 30), 1.7));
 
   std::vector<Sphere> spheres;
   spheres.push_back(Sphere(Vec3f(-3, 0, -16), 2, red));
-  spheres.push_back(Sphere(Vec3f(-1.0, -1.5, -12), 2, red));
+  spheres.push_back(Sphere(Vec3f(-1.0, -1.5, -12), 2, blue));
   spheres.push_back(Sphere(Vec3f(1.5, -0.5, -18), 3, blue));
   spheres.push_back(Sphere(Vec3f(7, 5, -18), 4, red));
 

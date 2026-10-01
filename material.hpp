@@ -1,5 +1,6 @@
 #pragma once
 #include "geometry.hpp"
+#include <array>
 
 class Material {
 public:
@@ -12,9 +13,9 @@ class PhongMaterial : Material {
 public:
   Vec3f diffuse_color;
   double specular_exponent;
-  double albedo;
+  std::array<double, 2> albedo;
 
-  PhongMaterial(const Vec3f &color, const double a, const double se)
+  PhongMaterial(const Vec3f &color, const std::array<double, 2> &a, const double se)
       : diffuse_color(color), specular_exponent(se), albedo(a) {};
   PhongMaterial() : diffuse_color(), specular_exponent(), albedo() {};
 };
