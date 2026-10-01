@@ -74,9 +74,7 @@ bool spheres_intersect(Vec3f ori, Vec3f dir, std::vector<Sphere> &spheres, Phong
   return spheres_dist < 1000;
 }
 
-Vec3f reflect(Vec3f vec, Vec3f N) {
-  return vec - N * 2.f * (vec * N); // tinyraycaster
-}
+Vec3f reflect(Vec3f vec, Vec3f N) { return vec - N * 2.f * (vec * N); }
 
 Vec3f cast_ray(Vec3f ori, Vec3f dir, std::vector<Sphere> &spheres, std::vector<Light> lights) {
   PhongMaterial material;
@@ -88,17 +86,17 @@ Vec3f cast_ray(Vec3f ori, Vec3f dir, std::vector<Sphere> &spheres, std::vector<L
 
     for (auto light : lights) {
       Vec3f light_dir = (light.position - hit).normalize();
-      Vec3f reflection_light = -reflect(-light_dir, normal);
+      Vec3f reflection_light = reflect(-light_dir, normal);
 
       diffuse_light += light.intensity * std::max(0.f, light_dir * normal);
-      specular_light += light.intensity * std::powf(std::max(0.f, reflection_light * dir),
+      specular_light += light.intensity * std::powf(std::max(0.f, reflection_light * (-dir)),
                                                     material.specular_exponent);
     }
 
     return material.diffuse_color * diffuse_light + whiteColor * specular_light; // Sphere color
   }
 
-  return BgColor; // Background color
+  return BgColor;
 }
 
 void render(std::vector<Vec3f> &framebuffer, std::vector<Sphere> &spheres,
