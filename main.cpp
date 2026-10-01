@@ -84,10 +84,23 @@ Vec3f cast_ray(Vec3f ori, Vec3f dir, std::vector<Sphere> &spheres, std::vector<L
     double diffuse_light = .0;
     double specular_light = .0;
 
-    // Take everything here to a PhongMaterial method that return only the final pixel color
+    // TODO: Take everything here to a PhongMaterial method that return only the final pixel color
     for (auto light : lights) {
       Vec3f light_dir = (light.position - hit).normalize();
       Vec3f reflection_light = reflect(-light_dir, normal);
+
+      // shadow receive
+      double light_length = (light.position - hit).norm();
+      // move the hit point along N because hit is on the surface of the sphere and can intersect
+      // with himself
+      Vec3f shadow_orig = light_dir * normal < 0 ? hit - normal * 1e-3 : hit + normal * 1e-3;
+      Vec3f shadow_normal, shadow_hit;
+      PhongMaterial tmpMaterial;
+
+      if (spheres_intersect(shadow_orig, light_dir, spheres, tmpMaterial, shadow_normal,
+                            shadow_hit) &&
+          (shadow_hit - shadow_orig).norm() < light_length)
+        continue;
 
       diffuse_light += light.intensity * std::max(0.f, light_dir * normal);
       specular_light += light.intensity * std::powf(std::max(0.f, reflection_light * (-dir)),
