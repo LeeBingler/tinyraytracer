@@ -1,6 +1,7 @@
 #include "geometry.hpp"
 #include "material.hpp"
 #include <cmath>
+#include <cstddef>
 #include <cstdlib>
 #include <fstream>
 #include <iostream>
@@ -74,9 +75,27 @@ bool spheres_intersect(Vec3f ori, Vec3f dir, std::vector<Sphere> &spheres, Phong
   return spheres_dist < 1000;
 }
 
-Vec3f reflect(Vec3f vec, Vec3f N) { return vec - N * 2.f * (vec * N); }
+Vec3f reflect(Vec3f vec, Vec3f &N) { return vec - N * 2.f * (vec * N); }
 
-Vec3f cast_ray(Vec3f ori, Vec3f dir, std::vector<Sphere> &spheres, std::vector<Light> lights,
+// Snell's law
+Vec3f refract(const Vec3f &I, const Vec3f &N, const float &refractive_index) {
+  float cosi = -std::max(-1.f, std::min(1.f, I * N));
+  float etai = 1, etat = refractive_index;
+  Vec3f n = N;
+
+  // if the ray is inside the object, swap the indices and invert the normal to get the correct
+  // result
+  if (cosi < 0) {
+    cosi = -cosi;
+    std::swap(etai, etat);
+    n = -N;
+  }
+  float eta = etai / etat;
+  float k = 1 - eta * eta * (1 - cosi * cosi);
+  return k < 0 ? Vec3f(0, 0, 0) : I * eta + n * (eta * cosi - sqrtf(k));
+}
+
+Vec3f cast_ray(Vec3f ori, Vec3f &dir, std::vector<Sphere> &spheres, std::vector<Light> lights,
                size_t depth = 0) {
   PhongMaterial material;
   Vec3f normal, hit;
@@ -85,13 +104,17 @@ Vec3f cast_ray(Vec3f ori, Vec3f dir, std::vector<Sphere> &spheres, std::vector<L
     return BgColor;
   }
 
-  // TODO: Take everything here to a PhongMaterial method that return only the final pixel color
-
   // Mirror reflections
   Vec3f reflect_dir = reflect(dir, normal).normalize();
   // offset the original point to avoid occlusion by the object itself
   Vec3f reflect_orig = reflect_dir * normal < 0 ? hit - normal * 1e-3 : hit + normal * 1e-3;
   Vec3f reflect_color = cast_ray(reflect_orig, reflect_dir, spheres, lights, depth + 1);
+
+  // Mirror refraction
+  Vec3f refraction_dir = refract(dir, normal, material.refractive_index).normalize();
+  // offset the original point to avoid occlusion by the object itself
+  Vec3f refraction_orig = refraction_dir * normal < 0 ? hit - normal * 1e-3 : hit + normal * 1e-3;
+  Vec3f refraction_color = cast_ray(refraction_orig, refraction_dir, spheres, lights, depth + 1);
 
   double diffuse_light = .0;
   double specular_light = .0;
@@ -120,7 +143,8 @@ Vec3f cast_ray(Vec3f ori, Vec3f dir, std::vector<Sphere> &spheres, std::vector<L
 
   // Sphere color at dir
   return material.diffuse_color * diffuse_light * material.albedo[0] +
-         whiteColor * specular_light * material.albedo[1] + reflect_color * material.albedo[2];
+         whiteColor * specular_light * material.albedo[1] + reflect_color * material.albedo[2] +
+         refraction_color * material.albedo[3];
 }
 
 void render(std::vector<Vec3f> &framebuffer, std::vector<Sphere> &spheres,
@@ -153,9 +177,10 @@ void save_image(std::vector<Vec3f> &framebuffer) {
 int main() {
   std::vector<Vec3f> framebuffer(width * height);
 
-  PhongMaterial red{redColor, {.6, 0.3, .3}, 50.};
-  PhongMaterial blue{blueColor, {.9, .1, .1}, 10.};
-  PhongMaterial mirror{Vec3f(1., 1., 1.), {0., 10., .8}, 1425.};
+  PhongMaterial red{redColor, {.6, 0.3, .3, .0}, 50., 1.};
+  PhongMaterial blue{blueColor, {.9, .1, .1, .0}, 10., 1.};
+  PhongMaterial mirror{Vec3f(1., 1., 1.), {0., 10., .8, 0.}, 1425., 1.};
+  PhongMaterial glass{Vec3f(1., 1., 1.), {0., .5, .1, .8}, 125., 1.5};
 
   std::vector<Light> lights;
   lights.push_back(Light(Vec3f(-20, 20, 20), 1.5));
@@ -164,7 +189,7 @@ int main() {
 
   std::vector<Sphere> spheres;
   spheres.push_back(Sphere(Vec3f(-3, 0, -16), 2, red));
-  spheres.push_back(Sphere(Vec3f(-1.0, -1.5, -12), 2, blue));
+  spheres.push_back(Sphere(Vec3f(-1.0, -1.5, -12), 2, glass));
   spheres.push_back(Sphere(Vec3f(1.5, -0.5, -18), 3, blue));
   spheres.push_back(Sphere(Vec3f(7, 5, -18), 4, mirror));
 
