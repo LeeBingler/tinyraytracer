@@ -1,16 +1,15 @@
-#include "geometry.hpp"
-#include "material.hpp"
-#include "object.hpp"
+#include "include/geometry.hpp"
+#include "include/material.hpp"
+#include "include/object.hpp"
+#include "include/save_image.hpp"
 #include <cmath>
 #include <cstddef>
 #include <cstdlib>
-#include <fstream>
-#include <iostream>
 #include <limits>
 #include <vector>
 
-constexpr int width = 1024;
-constexpr int height = 768;
+extern constexpr int width = 1024;
+extern constexpr int height = 768;
 constexpr double fov = M_PI / 2.;
 
 Vec3f whiteColor(1., 1., 1.);
@@ -84,8 +83,7 @@ Vec3f cast_ray(Vec3f ori, Vec3f &dir, std::vector<Sphere> &spheres, std::vector<
 
     // shadow receive
     double light_length = (light.position - hit).norm();
-    // move the hit point along N because hit is on the surface of the sphere and can intersect
-    // with himself
+    // offset the original point to avoid occlusion by the object itself
     Vec3f shadow_orig = light_dir * normal < 0 ? hit - normal * 1e-3 : hit + normal * 1e-3;
     Vec3f shadow_normal, shadow_hit;
     PhongMaterial tmpMaterial;
@@ -118,19 +116,6 @@ void render(std::vector<Vec3f> &framebuffer, std::vector<Sphere> &spheres,
       framebuffer[i + j * width] = cast_ray(Vec3f(0, 0, 0), dir, spheres, lights);
     }
   }
-}
-
-void save_image(std::vector<Vec3f> &framebuffer) {
-  std::ofstream ofs; // save the framebuffer to file
-  ofs.open("./out.ppm");
-  ofs << "P6\n" << width << " " << height << "\n255\n";
-
-  for (size_t i = 0; i < height * width; ++i) {
-    for (size_t j = 0; j < 3; j++) {
-      ofs << (char)(255 * std::max(0.f, std::min(1.f, framebuffer[i][j])));
-    }
-  }
-  ofs.close();
 }
 
 int main() {
