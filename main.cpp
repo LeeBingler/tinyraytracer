@@ -3,6 +3,10 @@
 #include "include/object.hpp"
 #include "include/save_image.hpp"
 #include "include/scene_intersect.hpp"
+
+#define STB_IMAGE_IMPLEMENTATION
+#include "include/stb_image.h"
+
 #include <algorithm>
 #include <cmath>
 #include <cstddef>
@@ -87,8 +91,26 @@ Vec3f cast_ray(Vec3f ori, Vec3f &dir, std::vector<Sphere> &spheres, std::vector<
          refraction_color * material.albedo[3];
 }
 
+unsigned char *load_envmap() {
+  int m_width, m_height, m_bpp;
+  unsigned char *img = stbi_load("assets/envmap.jpg", &m_width, &m_height, &m_bpp, 3);
+
+  if (img == NULL) {
+    std::cerr << "Envmap not open" << std::endl;
+    return NULL;
+  }
+
+  std::cout << m_width << " " << m_height << " " << m_bpp << std::endl;
+
+  // TODO:: Load env to cast_ray + put the right pixel instead of bgColor (clamp width/height
+  // between 0 and 2PI)
+  return img;
+}
+
 void render(std::vector<Vec3f> &framebuffer, std::vector<Sphere> &spheres,
             std::vector<Light> lights) {
+  load_envmap();
+
 #pragma omp parallel for
   for (size_t j = 0; j < height; j++) {
     for (size_t i = 0; i < width; i++) {
