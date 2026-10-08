@@ -16,8 +16,8 @@ public:
   double specular_exponent;
   double refractive_index;
 
-  PhongMaterial(const Vec3f &color, const std::array<double, 4> &a, const double &se,
-                const double &r)
+  PhongMaterial(const Vec3f &color = Vec3f(1., 1., 1.),
+                const std::array<double, 4> &a = {.6, .0, .0, .0}, const double &se = 50.,
+                const double &r = 1)
       : diffuse_color(color), albedo(a), specular_exponent(se), refractive_index(r) {};
-  PhongMaterial() : diffuse_color(), albedo(), specular_exponent(), refractive_index() {};
 };

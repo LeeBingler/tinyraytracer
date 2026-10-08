@@ -2,37 +2,21 @@
 #include "include/material.hpp"
 #include "include/object.hpp"
 #include "include/save_image.hpp"
+#include "include/scene_intersect.hpp"
+#include <algorithm>
 #include <cmath>
 #include <cstddef>
 #include <cstdlib>
-#include <limits>
 #include <vector>
 
-extern constexpr int width = 1024;
-extern constexpr int height = 768;
-constexpr double fov = M_PI / 2.;
+extern constexpr unsigned int width = 1024;
+extern constexpr unsigned int height = 768;
+constexpr double fov = M_PI / 3.;
 
 Vec3f whiteColor(1., 1., 1.);
 Vec3f blueColor(.0, .0, 1.);
 Vec3f redColor(1., 0., 0.);
 Vec3f BgColor(0.2, 0.2, 0.2);
-
-bool spheres_intersect(Vec3f ori, Vec3f dir, std::vector<Sphere> &spheres, PhongMaterial &material,
-                       Vec3f &normal, Vec3f &hit) {
-  double spheres_dist = std::numeric_limits<double>::max();
-
-  for (auto sphere : spheres) {
-    double dist_i;
-    if (sphere.ray_intersect(ori, dir, dist_i) && dist_i < spheres_dist) {
-      spheres_dist = dist_i;
-      hit = ori + dir * dist_i;
-      normal = (hit - sphere.position).normalize();
-      material = sphere.material;
-    }
-  }
-
-  return spheres_dist < 1000;
-}
 
 Vec3f reflect(Vec3f vec, Vec3f &N) { return vec - N * 2.f * (vec * N); }
 
@@ -59,7 +43,7 @@ Vec3f cast_ray(Vec3f ori, Vec3f &dir, std::vector<Sphere> &spheres, std::vector<
   PhongMaterial material;
   Vec3f normal, hit;
 
-  if (depth > 4 || !spheres_intersect(ori, dir, spheres, material, normal, hit))
+  if (depth > 4 || !scene_intersect(ori, dir, spheres, material, normal, hit))
     return BgColor;
 
   // Mirror reflections
@@ -88,8 +72,7 @@ Vec3f cast_ray(Vec3f ori, Vec3f &dir, std::vector<Sphere> &spheres, std::vector<
     Vec3f shadow_normal, shadow_hit;
     PhongMaterial tmpMaterial;
 
-    if (spheres_intersect(shadow_orig, light_dir, spheres, tmpMaterial, shadow_normal,
-                          shadow_hit) &&
+    if (scene_intersect(shadow_orig, light_dir, spheres, tmpMaterial, shadow_normal, shadow_hit) &&
         (shadow_hit - shadow_orig).norm() < light_length)
       continue;
 
@@ -121,10 +104,10 @@ void render(std::vector<Vec3f> &framebuffer, std::vector<Sphere> &spheres,
 int main() {
   std::vector<Vec3f> framebuffer(width * height);
 
-  PhongMaterial red{redColor, {.6, 0.3, .3, .0}, 50., 1.};
-  PhongMaterial blue{blueColor, {.9, .1, .1, .0}, 10., 1.};
-  PhongMaterial mirror{Vec3f(1., 1., 1.), {0., 10., .8, 0.}, 1425., 1.};
-  PhongMaterial glass{Vec3f(1., 1., 1.), {0., .5, .1, .8}, 125., 1.5};
+  PhongMaterial red{redColor, {.6, .7, .1, .0}, 50., 1.};
+  PhongMaterial rubber_blue{blueColor, {.9, .1, .0, .0}, 7., 1.};
+  PhongMaterial mirror{Vec3f(1., 1., 1.), {.0, 10., .8, .0}, 1425., 1.};
+  PhongMaterial glass{Vec3f(1., 1., 1.), {.0, .5, .1, .8}, 125., 1.5};
 
   std::vector<Light> lights;
   lights.push_back(Light(Vec3f(-20, 20, 20), 1.5));
@@ -134,7 +117,7 @@ int main() {
   std::vector<Sphere> spheres;
   spheres.push_back(Sphere(Vec3f(-3, 0, -16), 2, red));
   spheres.push_back(Sphere(Vec3f(-1.0, -1.5, -12), 2, glass));
-  spheres.push_back(Sphere(Vec3f(1.5, -0.5, -18), 3, blue));
+  spheres.push_back(Sphere(Vec3f(1.5, -0.5, -18), 3, rubber_blue));
   spheres.push_back(Sphere(Vec3f(7, 5, -18), 4, mirror));
 
   render(framebuffer, spheres, lights);

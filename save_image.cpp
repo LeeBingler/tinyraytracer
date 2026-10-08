@@ -1,7 +1,9 @@
 #include "include/save_image.hpp"
 
-extern int width;
-extern int height;
+#include <fstream>
+
+extern const unsigned int width;
+extern const unsigned int height;
 
 void save_image(std::vector<Vec3f> &framebuffer) {
   // save the framebuffer to file
