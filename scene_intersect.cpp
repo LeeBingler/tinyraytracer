@@ -1,8 +1,7 @@
 #include "include/scene_intersect.hpp"
 
-double checkboard_intersect(Vec3f ori, Vec3f dir, std::vector<Sphere> &spheres,
-                            PhongMaterial &material, Vec3f &normal, Vec3f &hit,
-                            double &dist_min_scene) {
+double checkboard_intersect(Vec3f ori, Vec3f dir, PhongMaterial &material, Vec3f &normal,
+                            Vec3f &hit, double &dist_min_scene) {
   double checkerboard_dist = std::numeric_limits<float>::max();
 
   if (fabs(dir.y) > 1e-3) {
@@ -46,7 +45,7 @@ bool scene_intersect(Vec3f ori, Vec3f dir, std::vector<Sphere> &spheres, PhongMa
   double dist_min_scene;
 
   dist_min_scene = spheres_intersect(ori, dir, spheres, material, normal, hit);
-  dist_min_scene = checkboard_intersect(ori, dir, spheres, material, normal, hit, dist_min_scene);
+  dist_min_scene = checkboard_intersect(ori, dir, material, normal, hit, dist_min_scene);
 
   return dist_min_scene < 1000;
 }
