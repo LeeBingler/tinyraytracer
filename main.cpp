@@ -1,11 +1,9 @@
+#include "include/env_map.hpp"
 #include "include/geometry.hpp"
 #include "include/material.hpp"
 #include "include/object.hpp"
 #include "include/save_image.hpp"
 #include "include/scene_intersect.hpp"
-
-#define STB_IMAGE_IMPLEMENTATION
-#include "include/stb_image.h"
 
 #include <algorithm>
 #include <cmath>
@@ -43,24 +41,25 @@ Vec3f refract(const Vec3f &I, const Vec3f &N, const float &refractive_index) {
 }
 
 Vec3f cast_ray(Vec3f ori, Vec3f &dir, std::vector<Sphere> &spheres, std::vector<Light> lights,
-               size_t depth = 0) {
+               Env_map &envmap, size_t depth = 0) {
   PhongMaterial material;
   Vec3f normal, hit;
 
   if (depth > 4 || !scene_intersect(ori, dir, spheres, material, normal, hit))
-    return BgColor;
+    return envmap.get_color(dir, ori);
 
   // Mirror reflections
   Vec3f reflect_dir = reflect(dir, normal).normalize();
   // offset the original point to avoid occlusion by the object itself
   Vec3f reflect_orig = reflect_dir * normal < 0 ? hit - normal * 1e-3 : hit + normal * 1e-3;
-  Vec3f reflect_color = cast_ray(reflect_orig, reflect_dir, spheres, lights, depth + 1);
+  Vec3f reflect_color = cast_ray(reflect_orig, reflect_dir, spheres, lights, envmap, depth + 1);
 
   // Mirror refraction
   Vec3f refraction_dir = refract(dir, normal, material.refractive_index).normalize();
   // offset the original point to avoid occlusion by the object itself
   Vec3f refraction_orig = refraction_dir * normal < 0 ? hit - normal * 1e-3 : hit + normal * 1e-3;
-  Vec3f refraction_color = cast_ray(refraction_orig, refraction_dir, spheres, lights, depth + 1);
+  Vec3f refraction_color =
+      cast_ray(refraction_orig, refraction_dir, spheres, lights, envmap, depth + 1);
 
   double diffuse_light = .0;
   double specular_light = .0;
@@ -91,25 +90,8 @@ Vec3f cast_ray(Vec3f ori, Vec3f &dir, std::vector<Sphere> &spheres, std::vector<
          refraction_color * material.albedo[3];
 }
 
-unsigned char *load_envmap() {
-  int m_width, m_height, m_bpp;
-  unsigned char *img = stbi_load("assets/envmap.jpg", &m_width, &m_height, &m_bpp, 3);
-
-  if (img == NULL) {
-    std::cerr << "Envmap not open" << std::endl;
-    return NULL;
-  }
-
-  std::cout << m_width << " " << m_height << " " << m_bpp << std::endl;
-
-  // TODO:: Load env to cast_ray + put the right pixel instead of bgColor (clamp width/height
-  // between 0 and 2PI)
-  return img;
-}
-
 void render(std::vector<Vec3f> &framebuffer, std::vector<Sphere> &spheres,
-            std::vector<Light> lights) {
-  load_envmap();
+            std::vector<Light> &lights, Env_map &envmap) {
 
 #pragma omp parallel for
   for (size_t j = 0; j < height; j++) {
@@ -118,7 +100,7 @@ void render(std::vector<Vec3f> &framebuffer, std::vector<Sphere> &spheres,
       float y = -(2. * (j + 0.5) / (float)height - 1.) * tan(fov / 2.);
       Vec3f dir = Vec3f(x, y, -1.).normalize();
 
-      framebuffer[i + j * width] = cast_ray(Vec3f(0, 0, 0), dir, spheres, lights);
+      framebuffer[i + j * width] = cast_ray(Vec3f(0, 0, 0), dir, spheres, lights, envmap);
     }
   }
 }
@@ -142,7 +124,9 @@ int main() {
   spheres.push_back(Sphere(Vec3f(1.5, -0.5, -18), 3, rubber_blue));
   spheres.push_back(Sphere(Vec3f(7, 5, -18), 4, mirror));
 
-  render(framebuffer, spheres, lights);
+  Env_map env_map("assets/envmap.jpg");
+
+  render(framebuffer, spheres, lights, env_map);
 
   save_image(framebuffer);
   return 0;
