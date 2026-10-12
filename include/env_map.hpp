@@ -11,7 +11,7 @@ class Env_map {
 public:
   Env_map(std::string p);
 
-  Vec3f get_color(Vec3f &dir, Vec3f &ori);
+  Vec3f get_sample(Vec3f &dir);
 
   void free_img();
 };

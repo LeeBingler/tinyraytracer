@@ -46,7 +46,7 @@ Vec3f cast_ray(Vec3f ori, Vec3f &dir, std::vector<Sphere> &spheres, std::vector<
   Vec3f normal, hit;
 
   if (depth > 4 || !scene_intersect(ori, dir, spheres, material, normal, hit))
-    return envmap.get_color(dir, ori);
+    return envmap.get_sample(dir);
 
   // Mirror reflections
   Vec3f reflect_dir = reflect(dir, normal).normalize();
@@ -129,5 +129,7 @@ int main() {
   render(framebuffer, spheres, lights, env_map);
 
   save_image(framebuffer);
+
+  env_map.free_img();
   return 0;
 }
