@@ -31,6 +31,7 @@ Vec3f Env_map::get_sample(Vec3f &dir) {
 
   double u = 0.5f + std::atan2(dir.z, dir.x) / (2 * M_PI);
   double v = 1 - (std::asin(dir.y) / M_PI + .5);
+
   int x = std::min(int(u * m_width), int(m_width - 1));
   int y = std::min(int(v * m_height), int(m_height - 1));
 
