@@ -75,7 +75,7 @@ float y = -(2. * (j + 0.5) / (float)height - 1.) * tan(fov / 2.);
 ```
 
 Here is a representation of the camera from the top, in our image the screen is 16 pixels wide:
-![[trace.png]]
+<img width="718" height="488" alt="trace" src="https://github.com/user-attachments/assets/f6a652ed-f195-4b7f-954e-99b08599d880" />
 
 The `z = -1` because we want to shoot ray to the scene from the origin (camera `Vec3f(0,0,0)`).
 
@@ -128,7 +128,8 @@ if (sphere.ray_intersect(ori, dir, dist_i) && dist_i < spheres_dist) {
 #REMINDER: The dot product (produit scalaire) is use between 2 vector to get the angle (cos) between them.
 
 # Step 5 : Specular lighting
-![[68747470733a2f2f75706c6f61642e77696b696d656469612e6f72672f77696b6970656469612f636f6d6d6f6e732f362f36622f50686f6e675f636f6d706f6e656e74735f76657273696f6e5f342e706e67.png]]
+<img width="963" height="268" alt="68747470733a2f2f75706c6f61642e77696b696d656469612e6f72672f77696b6970656469612f636f6d6d6f6e732f362f36622f50686f6e675f636f6d706f6e656e74735f76657273696f6e5f342e706e67" src="https://github.com/user-attachments/assets/4364320d-6363-45e8-96a3-af8a7f1dfdba" />
+
 
 To make the specular lighting, we calculate the reflection of the light on the surface and see how much it align with the camera.
 
@@ -165,30 +166,17 @@ Vec3f cast_ray(Vec3f ori, Vec3f dir, std::vector<Sphere> &spheres, std::vector<L
 The calculation for the reflection of light is like that:
 
 What is reflection of a vector V:
-$$
-V = \begin{pmatrix} x = Vparallel \\ y = V perpendicular \end{pmatrix}, 
-V_{reflection} = \begin{pmatrix} x = Vparallel \\ y = -V perpendicular \end{pmatrix}
-$$
+$$V = \begin{pmatrix} x = Vparallel \\ y = V perpendicular \end{pmatrix}, V_{reflection} = \begin{pmatrix} x = Vparallel \\ y = -V perpendicular \end{pmatrix}$$
 
 How to find the x value of vector V (the vector that is parallel to the abscissa):
-$$
-Vec \cdot Normal = projection Of Vec Along Normal = shadowLength
-$$
-$$
-Normal \cdot shadowLength = VecAlongNormalWithShadowLength = V_{perp}
-$$
+$$Vec \cdot Normal = projection Of Vec Along Normal = shadowLength$$
+$$Normal \cdot shadowLength = VecAlongNormalWithShadowLength = V_{perp}$$
 How to find the y value of vector V (vector that is perpendicular to the abscissa):
-$$
-V = V_{parallel} + V_{perpendicular} \rightarrow V_{para} = V - V_{perp}
-$$
+$$V = V_{parallel} + V_{perpendicular} \rightarrow V_{para} = V - V_{perp}$$
 
 The calculation to find the reflection:
-$$
-V_{reflection} = V_{para} - V_{perp} \rightarrow V_{refl} = (V - V_{perp}) - V_{perp} \rightarrow V_{refl} = V - 2 * V_{perp}
-$$
-$$
-V_{refl} = V - 2 * N * (V * N)
-$$
+$$V_{reflection} = V_{para} - V_{perp} \rightarrow V_{refl} = (V - V_{perp}) - V_{perp} \rightarrow V_{refl} = V - 2 * V_{perp}$$
+$$V_{refl} = V - 2 * N * (V * N)$$
 
 
 # Step 6 : Shadow
@@ -233,20 +221,22 @@ We need to add one function to compute the refracted ray ([using Snell's law](ht
 Watch this to understand snell's law: https://www.youtube.com/watch?v=Iq1a_KJTWJ8
 
 Snells law say that :
-![[Screenshot_20261007_161238.png]]
+<img width="917" height="623" alt="Screenshot_20261007_161238" src="https://github.com/user-attachments/assets/032460d9-7ea8-4086-89cb-c45e66e94fcb" />
+
 
 Where Vair and Vwater are the speed of light inside air and water.
 Vwater can be any medium (matter where light travel).
 
 And that:
-![[Screenshot_20261007_164208.png]]
+<img width="1240" height="702" alt="Screenshot_20261007_164208" src="https://github.com/user-attachments/assets/8175cee0-ee27-4ebe-9e50-6dfaa48436d3" />
+
 
 To our case, we need to find the angle for $sin(i)$  and the refractive indices of our matter $n_1$ and $n_2$ to find $sin(r)$ and use cast ray with it. 
 We can decide the refractive indices arbitrarily, for our matter the user will decide and for the light it will be 1.
 
 #### Step 1 : To find the angle incidence angle `i`:
 1. We do the dot product between the normal and the vector and put it at negative to get $cos(i)$
-2. We clamp this angle between -1 and 1 (???)
+2. We clamp this angle between -1 and 1
 
 #### Step 2 : Entering or leaving? :
 If the angle is negative, it means we are leaving the matter.
@@ -297,7 +287,8 @@ The envmap is a 360° Photos.
 To understand deeply how Rendering 360° Photos work : https://ikyle.me/blog/2026/render-360-equirectangular
 
 To put it simply, the 360° Photos is warp the more your go to the corner:
-![[equirectangular-grid.jpeg]]
+<img width="2400" height="1260" alt="equirectangular-grid" src="https://github.com/user-attachments/assets/a3569f53-0176-4189-b28e-7bff25c5d8fa" />
+
 
 An equirectangular image is essentially a world map projection applied to a sphere. It encodes `(longitude, latitude)` over `(u, v)` texture space:
 - x coordinate : **Longitude** spans `[-π, +π]` horizontally (left edge = -180°, right edge = +180°)
@@ -305,21 +296,16 @@ An equirectangular image is essentially a world map projection applied to a sphe
 
 To get the right pixel, we need to do calculation on a direction vector. 
 **Every pixel in the texture corresponds to a direction in 3D space**. The direction is pointing in a direction (in a 3D sphere), and we need to find the right pixel of the image that correspond to the direction in the sphere:
-![[coordinate-axes.jpeg]]
+<img width="772" height="711" alt="coordinate-axes" src="https://github.com/user-attachments/assets/a50ab24f-21ca-4492-b920-b1d6fdf308dd" />
+
 
 To find the right coordinate point (latitude and longitude) with only a direction vector we need to use this (assuming the direction vector is normalize):
-$$
-latitude = asin(dir.y) \\
-longitude = atan2(dir.z, dir.x)
-$$
+$$latitude = asin(dir.y) \\ longitude = atan2(dir.z, dir.x)$$
 
 Now we have longitude and latitude that is between the range of the image.
 
 Now we need to remap the value between 0 and 1 to get the UV:
-$$
-V = (latitude / PI) + 0.5 \\
-U = (longitude / 2 * PI) + 0.5 
-$$
+$$V = (latitude / PI) + 0.5 \\ U = (longitude / 2 * PI) + 0.5$$
 
 #### Vertical coordinate - latitude (V):
 
@@ -336,11 +322,7 @@ Longitude is the angle of the direction’s projection onto the horizontal plane
 - Dividing by 2π gives (-0.5, 0.5], and adding 0.5 gives (0, 1].
 
 That gives us those formula:
-$$
-u = atan2(dir.z, dir.x) / (2 * PI) + 0.5
-$$
-$$
-v = 1 - (asin(dir.y) / PI + 0.5)
-$$
+$$u = atan2(dir.z, dir.x) / (2 * PI) + 0.5$$
+$$v = 1 - (asin(dir.y) / PI + 0.5)$$
 
 
